@@ -13,12 +13,18 @@ jobs:
       - uses: actions/checkout@v3
       - name: Get Cookie
         run: |
-          COOKIE=$(curl -sI https://toffeelive.com | grep -i "set-cookie" | awk '{print $2}' | tr -d '\r' | tr '\n' ' ')
-          echo "{\"cookie\": \"$COOKIE\", \"updated\": \"$(date)\"}" > token.json
+          # Toffee থেকে সব কুকি (Session, Device ID) সংগ্রহ করার উন্নত পদ্ধতি
+          FULL_COOKIE=$(curl -sI "https://toffeelive.com" | grep -i "set-cookie" | awk '{print $2}' | tr -d '\r' | tr '\n' ' ' | sed 's/path=\/;//g' | sed 's/HttpOnly;//g' | sed 's/Secure;//g')
+          
+          # যদি কুকি খালি থাকে তবে একটি ডিফল্ট ভ্যালু দেওয়া (যাতে JSON এরর না হয়)
+          if [ -z "$FULL_COOKIE" ]; then FULL_COOKIE="locale=en;"; fi
+          
+          echo "{\"cookie\": \"$FULL_COOKIE\", \"updated\": \"$(date)\"}" > token.json
+          
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           git add token.json
-          git commit -m "Update Toffee Cookie" || exit 0
+          git commit -m "Update Cookie with Full Headers" || exit 0
           git push

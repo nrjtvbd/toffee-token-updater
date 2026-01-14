@@ -1,0 +1,23 @@
+name: Update Toffee Cookie
+on:
+  schedule:
+    - cron: '*/20 * * * *' # প্রতি ২০ মিনিট পর পর চলবে
+  workflow_dispatch: # ম্যানুয়ালি চালানোর জন্য
+
+jobs:
+  update:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Get Cookie
+        run: |
+          # Toffee থেকে কুকি এবং সেশন আইডি নেওয়ার কমান্ড
+          COOKIE=$(curl -sI https://toffeelive.com | grep -i "set-cookie" | awk '{print $2}' | tr -d '\r' | tr '\n' ' ')
+          echo "{\"cookie\": \"$COOKIE\", \"updated\": \"$(date)\"}" > token.json
+      - name: Commit and Push
+        run: |
+          git config --global user.name "GitHub Action"
+          git config --global user.email "action@github.com"
+          git add token.json
+          git commit -m "Update Toffee Cookie" || exit 0
+          git push
